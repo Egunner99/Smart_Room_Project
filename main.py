@@ -7,9 +7,9 @@ import cv2
 from picamera2 import Picamera2
 
 # load from other files UPDATE NEEDED POST ORG
-from recognizer import load_known_faces, identify_in_frame
-from action import handle_person
-from config import KNOWN_FACES_DIR, COOLDOWN_SECONDS, CAPTURES_DIR
+from smart_room.recognizer import load_known_faces, identify_in_frame
+from smart_room.action import handle_person
+from smart_room.config import KNOWN_FACES_DIR, COOLDOWN_SECONDS, CAPTURES_DIR
 
 os.makedirs(CAPTURES_DIR, exist_ok=True)  # ensure captures directory exists
 
@@ -22,7 +22,7 @@ picam2.configure(picam2.create_preview_configuration())
 picam2.start()
 time.sleep(2)  # allow camera to warm up
 
-print(" the smart room is active. to cancel press ctrl+c or terminate the program")
+print("the smart room is active. to cancel press ctrl+c or terminate the program")
 
 last_seen = None
 last_trigger_time = {}

@@ -3,6 +3,10 @@ import cv2
 import time
 import os
 
+"""
+run via python tools/capture_faces.py to capture faces to be used by known_faces
+"""
+
 picam2 = Picamera2()
 picam2.configure(picam2.create_preview_configuration())
 picam2.start()

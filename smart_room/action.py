@@ -3,9 +3,9 @@
 import os
 import cv2
 
-from spotify_control import play_for_person
-from telegram_notify import send_message, send_photo
-from config import PLAYLISTS, UNKNOWN_TRACK, CAPTURES_DIR
+from .spotify_control import play_for_person
+from .telegram_notify import send_message, send_photo
+from .config import PLAYLISTS, UNKNOWN_TRACK, CAPTURES_DIR
 
 def handle_person(name, frame):
     if name.lower() == "unknown":
