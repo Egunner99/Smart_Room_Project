@@ -1,5 +1,11 @@
 venv/
+known_faces/
+captures/
 __pycache__/
 *.pyc
+*.jpg
+*.jpeg
+*.png
 .env
 .cache
+people.py

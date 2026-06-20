@@ -1,0 +1,10 @@
+#guide
+
+# create a people.py file and insert names of people to be recongnized and associated playlist 
+# includes a holder for UNKNOWN_TRACK for faces not being recongnized
+
+PLAYLISTS = {
+    "your_name_here": "your_spotify_playlist_uri_here",
+}
+
+UNKNOWN_TRACK = "spotify_track_uri_here"
