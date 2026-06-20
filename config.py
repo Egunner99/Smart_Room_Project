@@ -10,7 +10,7 @@ KNOWN_FACES_DIR = "known_faces"
 # delay time between each face recognition attempt, in seconds
 COOLDOWN_SECONDS = 30
 
-
+CAPTURES_DIR = "captures"  # directory to save captured images of unknown faces
 
 
 
