@@ -39,12 +39,13 @@ def load_known_faces(known_faces_dir):
 
     return encodings, names
 
-def identify_face(encoding, known_encodings, known_names, tolerance=0.6): 
+def identify_face(encoding, known_encodings, known_names, tolerance=0.5): 
     """
     the tolerance parameter can be adjusted to make the recognition more or less strict.
     further use of this project will consist of data collection to determine optimal
     STAGE AT THE MOMMENT: FUNCTIONAL 
     """
+    
     if not known_encodings: # for unknown faces return "Unknown"
         return "Unknown"
 
@@ -61,15 +62,21 @@ def identify_in_frame(frame, known_encodings, known_names):
     """
     function to be called in main loop to reset the name of the person in the frame.
     """
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB)  # convert to RGB for face_recognition
     locations = face_recognition.face_locations(rgb_frame)
     encodings = face_recognition.face_encodings(rgb_frame, locations)
 
-    if not encodings:
-        return None  # no faces detected
+    """
+    dealing with multiple faces present
+    """
+    known_here = [] # list of people in the frame
+    saw_unknown = False
 
     for encoding in encodings:
         name = identify_face(encoding, known_encodings, known_names)
-        if name != "unknown":
-            return name
-    return "unknown"
+        if name.lower() == "unknown":
+            saw_unknown = True
+        elif name not in known_here:
+            known_here.append(name) # CASE only add if not already present, could loop
+    
+    return known_here, saw_unknown 

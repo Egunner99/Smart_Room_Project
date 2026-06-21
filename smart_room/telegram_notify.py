@@ -5,6 +5,8 @@ Sends a text message (and optionally a photo) to your phone
 via a Telegram bot. Requires a .env file with:
     TELEGRAM_BOT_TOKEN
     TELEGRAM_CHAT_ID
+
+should now return correctly colored images
 """
 
 import os

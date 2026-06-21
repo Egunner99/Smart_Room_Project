@@ -12,6 +12,8 @@ COOLDOWN_SECONDS = 30
 
 CAPTURES_DIR = "captures"  # directory to save captured images of unknown faces
 
+PLAYBACK_DEVICE = "Smartphone"  # use spotify control to view devicetypes active
+
 
 
 

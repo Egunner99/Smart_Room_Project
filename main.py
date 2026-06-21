@@ -24,8 +24,8 @@ time.sleep(2)  # allow camera to warm up
 
 print("the smart room is active. to cancel press ctrl+c or terminate the program")
 
-last_seen = None
 last_trigger_time = {}
+present = set()  # to track who is currently in the room
 """
 trigger time exist in a dictionary to differentiate between people
 """
@@ -33,19 +33,31 @@ trigger time exist in a dictionary to differentiate between people
 try:
     while True:
         frame = picam2.capture_array()
-        name = identify_in_frame(frame, known_encodings, known_names)
+        known_here, saw_unknown = identify_in_frame(frame, known_encodings, known_names)
 
-        if name and name != last_seen:
-            last_time = last_trigger_time.get(name, 0)
-            if time.time() - last_time > COOLDOWN_SECONDS:
-                print(f"Identified: {name}" if name != "Unknown" else "Identified: Unknown face") # built in if to handle both
-                last_trigger_time[name] = time.time()
-                handle_person(name, frame)
-            last_seen = name
-        elif name is None:
-            last_seen = None  # reset
+        names_here = set(known_here)
+
+        if saw_unknown:
+            names_here.add("Unknown")
+
+        #trigger music for first perosn not all
+        music_person = known_here[0] if known_here else "Unknown"  
         
-        time.sleep(1)  # small delay to not overwhelm the CPU
+        for person in names_here:
+            if person in present:
+                continue  
+            if time.time() - last_trigger_time.get(person, 0) <= COOLDOWN_SECONDS:
+                continue #cooldown
+
+            last_trigger_time[person] = time.time()  
+
+            if person == "unknown":
+                print("unknown person detected")
+                handle_person("Unknown", frame, play_music=(music_person == None))
+            else:
+                print(f"{person} detected")
+                handle_person(person, frame, play_music=(music_person == person))
+        present = names_here # remember
 
 except KeyboardInterrupt:
     print("shut down the smart room")
