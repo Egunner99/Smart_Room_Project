@@ -43,6 +43,29 @@ def play_for_person(person_name, uri, device_type=None):
 
     print(f"playing for {person_name}")
 
+def next_track(device_type=None):
+    device_id = get_device_id(device_type)
+    if not device_id:
+        print("no matching spotify device found")
+        return
+    
+    sp.next_track(device_id=device_id)
+    print("skipped to next track")
+
+def toggle_play_pause(device_type=None):
+    device_id = get_device_id(device_type)
+    if not device_id:
+        print("no matching spotify device found")
+        return
+    
+    playback = sp.current_playback()
+    if playback and playback['is_playing']:
+        sp.pause_playback(device_id=device_id)
+        print("playback paused")
+    else:
+        sp.start_playback(device_id=device_id)
+        print("playback started")
+
 
 if __name__ == "__main__":
     test_playlist = os.getenv("DEFAULT_PLAYLIST_URI")
