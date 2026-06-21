@@ -20,16 +20,17 @@ load_dotenv()
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-"""
-added this portion to deal with the inconsistency of the telegram prompt. force it to attempt
-three times. the factor is the delay and the forcelist are the http status codes that arise
-"""
+#
+# added this portion to deal with the inconsistency of the telegram prompt. force it to attempt
+#three times. the factor is the delay and the forcelist are the http status codes that arise
+#
+
 session = requests.Session()
 retries = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
 session.mount("https://", HTTPAdapter(max_retries=retries))
 
 def send_message(text):
-    """Sends a plain text message to your Telegram chat."""
+    #Sends a plain text message to your Telegram chat.
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": text}
     response = session.post(url, data=payload, timeout=10)
@@ -37,7 +38,7 @@ def send_message(text):
 
 
 def send_photo(image_path, caption=""):
-    """Sends a photo with an optional caption to your Telegram chat."""
+    #Sends a photo with an optional caption to your Telegram chat.
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
     with open(image_path, "rb") as photo:
         files = {"photo": photo}

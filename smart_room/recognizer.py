@@ -4,10 +4,10 @@ import cv2
 import face_recognition  # this relies on the dlib library, CPU intensive
 # later to be revamped using the AI Camera 
 
-"""
-Loops through the known faces directory, based on the folder name. Encodes faces and store alongside
-the name for comparison. 
-"""
+#
+#Loops through the known faces directory, based on the folder name. Encodes faces and store alongside
+#the name for comparison. 
+#
 def load_known_faces(known_faces_dir):
     encodings = []
     names = []
@@ -40,11 +40,11 @@ def load_known_faces(known_faces_dir):
     return encodings, names
 
 def identify_face(encoding, known_encodings, known_names, tolerance=0.5): 
-    """
-    the tolerance parameter can be adjusted to make the recognition more or less strict.
-    further use of this project will consist of data collection to determine optimal
-    STAGE AT THE MOMMENT: FUNCTIONAL 
-    """
+    #
+    #the tolerance parameter can be adjusted to make the recognition more or less strict.
+    #further use of this project will consist of data collection to determine optimal
+    #STAGE AT THE MOMMENT: FUNCTIONAL 
+    #
     
     if not known_encodings: # for unknown faces return "Unknown"
         return "Unknown"
@@ -59,16 +59,16 @@ def identify_face(encoding, known_encodings, known_names, tolerance=0.5):
 
 
 def identify_in_frame(frame, known_encodings, known_names):
-    """
-    function to be called in main loop to reset the name of the person in the frame.
-    """
+    #
+    #function to be called in main loop to reset the name of the person in the frame.
+    3
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB)  # convert to RGB for face_recognition
     locations = face_recognition.face_locations(rgb_frame)
     encodings = face_recognition.face_encodings(rgb_frame, locations)
 
-    """
-    dealing with multiple faces present
-    """
+    #
+    #dealing with multiple faces present
+    #
     known_here = [] # list of people in the frame
     saw_unknown = False
 

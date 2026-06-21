@@ -27,10 +27,10 @@ def get_device_id(device_type=None):
 
 
 def play_for_person(person_name, uri, device_type=None):
-    """
-    plays either a playlist/album (context_uri) or a single track (uris list)
-    spotify uri format tells us which: spotify:track:... vs spotify:playlist:...
-    """
+    
+    #plays either a playlist/album (context_uri) or a single track (uris list)
+    #switch spotify uri format tells us which: spotify:track:... vs spotify:playlist:...
+    
     device_id = get_device_id(device_type)
     if not device_id:
         print("no matching spotify device found")

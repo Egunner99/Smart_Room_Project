@@ -26,9 +26,9 @@ print("the smart room is active. to cancel press ctrl+c or terminate the program
 
 last_trigger_time = {}
 present = set()  # to track who is currently in the room
-"""
-trigger time exist in a dictionary to differentiate between people
-"""
+
+# trigger time exist in a dictionary to differentiate between people
+
 
 try:
     while True:
