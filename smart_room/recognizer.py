@@ -3,9 +3,10 @@ import os
 import numpy as np
 import cv2
 import face_recognition  # this relies on the dlib library, CPU intensive
+from .config import ENCODINGS_CACHE, RECOGNITION_TOLERANCE
 # later to be revamped using the AI Camera 
-CACHE_FILE = "encoding.npz"
 
+#handling bootleneck of loading known faces
 def build_encoding(known_faces_dir):
     encodings = []
     names = [] 
@@ -33,10 +34,10 @@ def build_encoding(known_faces_dir):
     return encodings, names
 
 def _cache_is_fresh(known_faces_dir):
-    if not os.path.exists(CACHE_FILE):
+    if not os.path.exists(ENCODINGS_CACHE):
         return False
 
-    cache_mtime = os.path.getmtime(CACHE_FILE)
+    cache_mtime = os.path.getmtime(ENCODINGS_CACHE)
 
     for root, _, files in os.walk(known_faces_dir):
         for filename in files:
@@ -46,7 +47,7 @@ def _cache_is_fresh(known_faces_dir):
 
 def load_known_faces(known_faces_dir):
     if _cache_is_fresh(known_faces_dir):
-        data = np.load(CACHE_FILE)
+        data = np.load(ENCODINGS_CACHE)
         encoding = list(data["encodings"])
         names = [str(n) for n in data["names"]]
         print("loaded encodings from cache")
@@ -54,10 +55,10 @@ def load_known_faces(known_faces_dir):
 
     print("building encodings from images")
     encodings, names = build_encoding(known_faces_dir)
-    np.savez(CACHE_FILE, encodings = np.array(encodings), names = np.array(names))
+    np.savez(ENCODINGS_CACHE, encodings = np.array(encodings), names = np.array(names))
     return encodings, names
 
-def identify_face(encoding, known_encodings, known_names, tolerance=0.5): 
+def identify_face(encoding, known_encodings, known_names, tolerance=RECOGNITION_TOLERANCE): 
     #
     #the tolerance parameter can be adjusted to make the recognition more or less strict.
     #further use of this project will consist of data collection to determine optimal

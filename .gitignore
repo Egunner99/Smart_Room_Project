@@ -11,3 +11,4 @@ __pycache__/
 people.py
 misc/
 encoding.npz
+encodings.npz

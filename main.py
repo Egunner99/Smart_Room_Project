@@ -14,12 +14,9 @@ from picamera2.devices.imx500.postprocess_highernet import postprocess_higherhrn
 from smart_room.recognizer import load_known_faces, identify_in_frame
 from smart_room.action import handle_person
 from smart_room.gestures import hand_raised, handle_gesture
-from smart_room.config import KNOWN_FACES_DIR, COOLDOWN_SECONDS, CAPTURES_DIR
+from smart_room.config import KNOWN_FACES_DIR, COOLDOWN_SECONDS, CAPTURES_DIR, POSE_MODEL, POSE_THRESHOLD, FACE_INTERVAL
 
-POSE_MODEL = "/usr/share/imx500-models/imx500_network_higherhrnet_coco.rpk"
 IMG_SIZE = (480, 640)
-POSE_THRESHOLD = 0.5
-FACE_INTERVAL = 1 # delay for face recognition to CPU heavy
 
 os.makedirs(CAPTURES_DIR, exist_ok=True)  # ensure captures directory exists
 
@@ -93,7 +90,6 @@ try:
                 else:
                     handle_person(person, frame, play_music = (person == music_person))
             
-            present = names_here
 
         # gesture recognition loop NPU, only if known person is present
         if present_known:
