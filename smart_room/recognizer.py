@@ -1,42 +1,60 @@
 #making
 import os
+import numpy as np
 import cv2
 import face_recognition  # this relies on the dlib library, CPU intensive
 # later to be revamped using the AI Camera 
+CACHE_FILE = "encoding.npz"
 
-#
-#Loops through the known faces directory, based on the folder name. Encodes faces and store alongside
-#the name for comparison. 
-#
-def load_known_faces(known_faces_dir):
+def build_encoding(known_faces_dir):
     encodings = []
-    names = []
+    names = [] 
 
     for person_name in os.listdir(known_faces_dir):
         person_dir = os.path.join(known_faces_dir, person_name)
-        if not os.path.isdir(person_dir): # looks for folder containing faces
+        if not os.path.isdir(person_dir):
             continue
 
-        for filename in os.listdir(person_dir): # IGNORE no catch case for files not ending in .jpg or .png
-            # catch case
+        for filename in os.listdir(person_dir):
             if not filename.lower().endswith(('.jpg', '.jpeg', '.png')):
                 continue
-            
-            # load the preset images and encode the faces
-            path = os.path.join(person_dir, filename)  
-            image = face_recognition.load_image_file(path) 
-            face_encodings = face_recognition.face_encodings(image) 
 
-            if not face_encodings:  # if no faces found, skip
+            path = os.path.join(person_dir, filename)
+            image = face_recognition.load_image_file(path)
+            face_encodings = face_recognition.face_encodings(image)
+
+            if not face_encodings:
+                print(f"Warning: No faces found in {path}")
                 continue
 
-            encodings.append(face_encodings[0])  
-            """
-            assume one face per image. UPDATE EVENTUALLY 
-            """
+            encodings.append(face_encodings[0])
+            names.append(person_name)
 
-            names.append(person_name) 
+    return encodings, names
 
+def _cache_is_fresh(known_faces_dir):
+    if not os.path.exists(CACHE_FILE):
+        return False
+
+    cache_mtime = os.path.getmtime(CACHE_FILE)
+
+    for root, _, files in os.walk(known_faces_dir):
+        for filename in files:
+            if os.path.getmtime(os.path.join(root, filename)) > cache_mtime:
+                return False
+    return True   
+
+def load_known_faces(known_faces_dir):
+    if _cache_is_fresh(known_faces_dir):
+        data = np.load(CACHE_FILE)
+        encoding = list(data["encodings"])
+        names = [str(n) for n in data["names"]]
+        print("loaded encodings from cache")
+        return encoding, names
+
+    print("building encodings from images")
+    encodings, names = build_encoding(known_faces_dir)
+    np.savez(CACHE_FILE, encodings = np.array(encodings), names = np.array(names))
     return encodings, names
 
 def identify_face(encoding, known_encodings, known_names, tolerance=0.5): 
@@ -45,23 +63,22 @@ def identify_face(encoding, known_encodings, known_names, tolerance=0.5):
     #further use of this project will consist of data collection to determine optimal
     #STAGE AT THE MOMMENT: FUNCTIONAL 
     #
-    
-    if not known_encodings: # for unknown faces return "Unknown"
+
+    if not known_encodings:
         return "Unknown"
-
+    
     distances = face_recognition.face_distance(known_encodings, encoding)
-    best_match_index = distances.argmin()  # get the index of the closest match
-
-    if distances[best_match_index] <= tolerance:
+    best_match_index = distances.argmin() #armin returns the index of the smallest distance
+    if distances[best_match_index] < tolerance:
         return known_names[best_match_index]
     else:
-        return "Unknown"
+        return "Unknown" 
 
 
 def identify_in_frame(frame, known_encodings, known_names):
     #
     #function to be called in main loop to reset the name of the person in the frame.
-    3
+    
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB)  # convert to RGB for face_recognition
     locations = face_recognition.face_locations(rgb_frame)
     encodings = face_recognition.face_encodings(rgb_frame, locations)

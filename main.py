@@ -33,8 +33,8 @@ if intrinsics.inference_rate is None:
     intrinsics.inference_rate = 10
 intrinsics.update_with_defaults()
 
-#bottleneck here FIX
-print("need to load known faces. takes times") # this is a bottleneck on bootup
+#bottleneck here SOLVED
+print("faces loaded.") 
 known_encodings, known_names = load_known_faces(KNOWN_FACES_DIR)
 print("known faces loaded")
 
@@ -51,8 +51,7 @@ time.sleep(2)  # allow camera to warm up
 print("the smart room is active. to cancel press ctrl+c or terminate the program")
 
 # states to track
-last_trigger_time = {} # cooldown dictionary to track per person SOLVES MULTI
-present = set()  # to track who is currently in the room
+last_seen_time = {} # cooldown dictionary to track per person SOLVES MULTI
 present_known = [] # help gesture control by known 
 last_face_check = 0 # to limit face recognition frequency
 last_gesture_check = None # to prevent repeated gesture triggers
@@ -70,7 +69,8 @@ try:
 
         # face recognition loop CPU
         if do_face:
-            last_face_check = time.time()
+            now = time.time()
+            last_face_check = now 
             known_here, saw_unknown = identify_in_frame(frame, known_encodings, known_names)
             present_known =  known_here
 
@@ -81,12 +81,11 @@ try:
             music_person = known_here[0] if len(known_here) > 0 else None
 
             for person in names_here:
-                if person not in present:
-                    continue
-                if time.time() - last_trigger_time.get(person, 0) < COOLDOWN_SECONDS:
-                    continue
+                if now - last_seen_time.get(person, 0) < COOLDOWN_SECONDS:
+                    last_seen_time[person] = now  # fix updateing time to prevent triggers
+                    continue  
 
-                last_trigger_time[person] = time.time()
+                last_seen_time[person] = now
                 print(f"{person} entered the room")
 
                 if person == "Unknown":

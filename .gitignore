@@ -9,3 +9,5 @@ __pycache__/
 .env
 .cache
 people.py
+misc/
+encoding.npz
