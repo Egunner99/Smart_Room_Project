@@ -3,65 +3,129 @@
 import os
 import time
 import cv2
+import numpy as np
+
 
 from picamera2 import Picamera2
+from picamera2.devices.imx500 import IMX500, NetworkIntrinsics
+from picamera2.devices.imx500.postprocess_highernet import postprocess_higherhrnet
 
 # load from other files UPDATE NEEDED POST ORG
 from smart_room.recognizer import load_known_faces, identify_in_frame
 from smart_room.action import handle_person
+from smart_room.gestures import hand_raised, handle_gesture
 from smart_room.config import KNOWN_FACES_DIR, COOLDOWN_SECONDS, CAPTURES_DIR
+
+POSE_MODEL = "/usr/share/imx500-models/imx500_network_higherhrnet_coco.rpk"
+IMG_SIZE = (480, 640)
+POSE_THRESHOLD = 0.5
+FACE_INTERVAL = 1 # delay for face recognition to CPU heavy
 
 os.makedirs(CAPTURES_DIR, exist_ok=True)  # ensure captures directory exists
 
+#load the pose model and set up camera, tested in gesture_control_test.py WOKRING
+imx500 = IMX500(POSE_MODEL) 
+intrinsics = imx500.network_intrinsics
+if not intrinsics:
+    intrinsics = NetworkIntrinsics()
+    intrinsics.task = "pose estimation"
+if intrinsics.inference_rate is None:
+    intrinsics.inference_rate = 10
+intrinsics.update_with_defaults()
+
+#bottleneck here FIX
 print("need to load known faces. takes times") # this is a bottleneck on bootup
 known_encodings, known_names = load_known_faces(KNOWN_FACES_DIR)
 print("known faces loaded")
 
-picam2 = Picamera2()
-picam2.configure(picam2.create_preview_configuration())
-picam2.start()
+
+# set and start the camera
+picam2 = Picamera2(imx500.camera_num)
+config = picam2.create_preview_configuration(
+    controls={"FrameRate": intrinsics.inference_rate}, buffer_count=12
+)
+picam2.start(config)
+imx500.set_auto_aspect_ratio()
 time.sleep(2)  # allow camera to warm up
 
 print("the smart room is active. to cancel press ctrl+c or terminate the program")
 
-last_trigger_time = {}
+# states to track
+last_trigger_time = {} # cooldown dictionary to track per person SOLVES MULTI
 present = set()  # to track who is currently in the room
+present_known = [] # help gesture control by known 
+last_face_check = 0 # to limit face recognition frequency
+last_gesture_check = None # to prevent repeated gesture triggers
 
 # trigger time exist in a dictionary to differentiate between people
 
 
 try:
     while True:
-        frame = picam2.capture_array()
-        known_here, saw_unknown = identify_in_frame(frame, known_encodings, known_names)
+        request = picam2.capture_request()
+        metadata = request.get_metadata()
+        do_face = time.time() - last_face_check > FACE_INTERVAL
+        frame = request.make_array("main") if do_face else None
+        request.release()
 
-        names_here = set(known_here)
+        # face recognition loop CPU
+        if do_face:
+            last_face_check = time.time()
+            known_here, saw_unknown = identify_in_frame(frame, known_encodings, known_names)
+            present_known =  known_here
 
-        if saw_unknown:
-            names_here.add("Unknown")
+            names_here = set(known_here)
+            if saw_unknown:
+                names_here.add("Unknown")
 
-        #trigger music for first perosn not all
-        music_person = known_here[0] if known_here else "Unknown"  
-        
-        for person in names_here:
-            if person in present:
-                continue  
-            if time.time() - last_trigger_time.get(person, 0) <= COOLDOWN_SECONDS:
-                continue #cooldown
+            music_person = known_here[0] if len(known_here) > 0 else None
 
-            last_trigger_time[person] = time.time()  
+            for person in names_here:
+                if person not in present:
+                    continue
+                if time.time() - last_trigger_time.get(person, 0) < COOLDOWN_SECONDS:
+                    continue
 
-            if person == "unknown":
-                print("unknown person detected")
-                handle_person("Unknown", frame, play_music=(music_person == None))
-            else:
-                print(f"{person} detected")
-                handle_person(person, frame, play_music=(music_person == person))
-        present = names_here # remember
+                last_trigger_time[person] = time.time()
+                print(f"{person} entered the room")
+
+                if person == "Unknown":
+                    handle_person("Unknown", frame, play_music = (not known_here))
+                else:
+                    handle_person(person, frame, play_music = (person == music_person))
+            
+            present = names_here
+
+        # gesture recognition loop NPU, only if known person is present
+        if present_known:
+            np_outputs = imx500.get_outputs(metadata=metadata, add_batch=True)
+            if np_outputs is not None:
+                keypoints, scores, boxes = postprocess_higherhrnet(
+                    outputs=np_outputs,
+                    img_size=IMG_SIZE,
+                    img_w_pad=(0, 0), img_h_pad=(0, 0),
+                    detection_threshold=POSE_THRESHOLD,
+                    network_postprocess=True,
+                )
+
+                if scores is not None and len(scores) > 0:
+                    kp = np.reshape(np.stack(keypoints, axis=0), (len(scores), 17, 3))
+                    rasied = hand_raised(kp[0])
+                    if rasied != last_gesture_check: #acting occurs only if hand state changes
+                        if rasied:
+                            print(rasied)
+                            handle_gesture(rasied)
+                        last_gesture_check = rasied # reset the gesture check to prevent repeated triggers
+                else:
+                    last_gesture_check = None
+        else:
+            last_gesture_check = None
+
+        time.sleep(0.1)  # 10 frames per second
 
 except KeyboardInterrupt:
-    print("shut down the smart room")
+    print("stopping smart room")
 
 finally:
-    picam2.stop()
+    picam2.stop()        
 
