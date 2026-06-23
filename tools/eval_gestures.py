@@ -20,8 +20,6 @@ print (f"loaded {len(X_train)} training samples with {X_train.shape[1]} features
 clf = RandomForestClassifier(n_estimators=200, random_state=42)
 clf.fit(X_train, y_train)
 
-print("Classification report on test set:")
-
 labels = sorted(set(y_test))
 predictions = clf.predict(X_test)
 print(classification_report(y_test, predictions))

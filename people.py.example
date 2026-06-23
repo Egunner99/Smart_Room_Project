@@ -7,4 +7,14 @@ PLAYLISTS = {
     "your_name_here": "your_spotify_playlist_uri_here",
 }
 
+
+FAVORITE_TRACKS = {
+    "your_name_here": "your_spotify_track_uri_here"
+}
+
+LOVE_TRACKS = {
+    "your_name_here": "your_spotify_track_uri_here"
+}
+
+
 UNKNOWN_TRACK = "spotify_track_uri_here"

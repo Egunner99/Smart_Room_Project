@@ -45,5 +45,11 @@ cm = confusion_matrix(y_test, predictions, labels=labels)
 print("Labels:", labels)
 print(cm)
 
-joblib.dump(clf, MODEL_FILE)
+joblib.dump(clf, "gesture_model_split.joblib")
+
+final = RandomForestClassifier(n_estimators=200, random_state=42)
+final.fit(X, y) # train on all data
+joblib.dump(final, MODEL_FILE)
+
 print(f"Model saved to {MODEL_FILE}")
+

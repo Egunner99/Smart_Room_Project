@@ -66,6 +66,39 @@ def toggle_play_pause(device_type=None):
         sp.start_playback(device_id=device_id)
         print("playback started")
 
+# spotify does not allow configurable volume control
+# def _set_relative_volume(device_type, delta):
+#     device_id = get_device_id(device_type)
+#     if not device_id:
+#         print("no matching spotify device found")
+#         return
+
+#     playback = sp.current_playback()
+#     if not playback or not playback.get('device'):
+#         print("no active playback found")
+#         return
+#     current = playback['device']['volume_percent']
+#     if current is None:
+#         print("no active playback found")
+#         return
+#     new = max(0, min(100, current + delta))
+#     sp.volume(new, device_id=device_id)
+#     print(f"volume set to {new}%")
+
+# def increase_volume(device_type=None, delta=10):
+#     _set_relative_volume(device_type, delta)
+
+# def decrease_volume(device_type=None, delta=10):
+#     _set_relative_volume(device_type, -delta)
+
+def play_track(uri, device_type=None):
+    device_id = get_device_id(device_type)
+    if not device_id:
+        print("no matching spotify device found")
+        return
+    
+    sp.start_playback(device_id=device_id, uris=[uri])
+    print(f"playing track {uri}")
 
 if __name__ == "__main__":
     test_playlist = os.getenv("DEFAULT_PLAYLIST_URI")

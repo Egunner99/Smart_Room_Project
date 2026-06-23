@@ -13,8 +13,8 @@ from picamera2.devices.imx500.postprocess_highernet import postprocess_higherhrn
 # load from other files UPDATE NEEDED POST ORG
 from smart_room.recognizer import load_known_faces, identify_in_frame
 from smart_room.action import handle_person
-from smart_room.gestures import hand_raised, handle_gesture
-from smart_room.config import KNOWN_FACES_DIR, COOLDOWN_SECONDS, CAPTURES_DIR, POSE_MODEL, POSE_THRESHOLD, FACE_INTERVAL
+from smart_room.gestures import classify_gesture, handle_gesture
+from smart_room.config import KNOWN_FACES_DIR, COOLDOWN_SECONDS, CAPTURES_DIR, POSE_MODEL, POSE_THRESHOLD, FACE_INTERVAL, GESTURE_COOLDOWN
 
 IMG_SIZE = (480, 640)
 
@@ -52,6 +52,7 @@ last_seen_time = {} # cooldown dictionary to track per person SOLVES MULTI
 present_known = [] # help gesture control by known 
 last_face_check = 0 # to limit face recognition frequency
 last_gesture_check = None # to prevent repeated gesture triggers
+last_gesture_time = {} # to track when each gesture was last triggered
 
 # trigger time exist in a dictionary to differentiate between people
 
@@ -105,12 +106,13 @@ try:
 
                 if scores is not None and len(scores) > 0:
                     kp = np.reshape(np.stack(keypoints, axis=0), (len(scores), 17, 3))
-                    rasied = hand_raised(kp[0])
-                    if rasied != last_gesture_check: #acting occurs only if hand state changes
-                        if rasied:
-                            print(rasied)
-                            handle_gesture(rasied)
-                        last_gesture_check = rasied # reset the gesture check to prevent repeated triggers
+                    gesture = classify_gesture(kp[0])
+                    if gesture != last_gesture_check: #acting occurs only if hand state changes
+                        if gesture and gesture != "neutral": # ignore neutral gestures
+                            print(gesture)
+                            handle_gesture(gesture, present_known[0]) # handle first person detected
+                            last_gesture_time[gesture] = time.time()  # update the last triggered time for this gesture
+                        last_gesture_check = gesture # reset the gesture check to prevent repeated triggers
                 else:
                     last_gesture_check = None
         else:
