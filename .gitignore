@@ -9,9 +9,7 @@ __pycache__/
 .env
 .cache
 people.py
-misc/asd
-encoding.npz
-encodings.npz
-gesture_data.csv
-gesture_test.csv
 misc/
+misc/
+models/encodings.npz
+data/

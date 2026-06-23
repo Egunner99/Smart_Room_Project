@@ -1,12 +1,15 @@
 import csv
 import numpy as np
 import joblib
+import os
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import classification_report, confusion_matrix
 
-DATA_FILE = "gesture_data.csv"
-MODEL_FILE = "gesture_model.joblib" # saving model here
+os .makedirs("models", exist_ok=True)  # ensure models directory exists
+
+DATA_FILE = "data/gesture_data.csv"
+MODEL_FILE = "models/gesture_model.joblib" # saving model here
 
 
 X, y = [], [] #load data (the rows has a label)
@@ -45,11 +48,11 @@ cm = confusion_matrix(y_test, predictions, labels=labels)
 print("Labels:", labels)
 print(cm)
 
-joblib.dump(clf, "gesture_model_split.joblib")
+joblib.dump(clf, "models/gesture_model_split.joblib")
 
 final = RandomForestClassifier(n_estimators=200, random_state=42)
 final.fit(X, y) # train on all data
-joblib.dump(final, MODEL_FILE)
+joblib.dump(final, "models/gesture_model.joblib")
 
 print(f"Model saved to {MODEL_FILE}")
 

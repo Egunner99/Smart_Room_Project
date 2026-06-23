@@ -1,5 +1,5 @@
 # working
-
+import os
 import csv 
 import time
 import numpy as np
@@ -12,10 +12,13 @@ from picamera2.devices.imx500.postprocess_highernet import postprocess_higherhrn
 from smart_room.gestures import extract_features
 from smart_room.config import POSE_MODEL, POSE_THRESHOLD
 
+DATA_DIR = "data"
+os.makedirs(DATA_DIR, exist_ok=True)
+filename = sys.argv[1] if len(sys.argv) > 1 else "gesture_data.csv"
+DATA_FILE = os.path.join(DATA_DIR, filename)
+
 IMG_SIZE = (480, 640)
 SAMPLES_PER_RUN = 100
-DATA_FILE = sys.argv[1] if len(sys.argv) > 1 else "gesture_data.csv"  
-
 imx500 = IMX500(POSE_MODEL)
 intrinsics = imx500.network_intrinsics
 if not intrinsics:

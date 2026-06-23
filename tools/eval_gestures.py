@@ -13,8 +13,8 @@ def load(path):
             y.append(row[0]) # label
     return np.array(X), np.array(y)
 
-X_train, y_train = load("gesture_data.csv")
-X_test, y_test = load("gesture_test.csv")
+X_train, y_train = load("data/gesture_data.csv")
+X_test, y_test = load("data/gesture_test.csv")
 print (f"loaded {len(X_train)} training samples with {X_train.shape[1]} features each")
 
 clf = RandomForestClassifier(n_estimators=200, random_state=42)

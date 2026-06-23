@@ -19,6 +19,7 @@ from smart_room.config import KNOWN_FACES_DIR, COOLDOWN_SECONDS, CAPTURES_DIR, P
 IMG_SIZE = (480, 640)
 
 os.makedirs(CAPTURES_DIR, exist_ok=True)  # ensure captures directory exists
+os.makedirs(MODELS_DIR, exist_ok=True)  # ensure models directory exists
 
 #load the pose model and set up camera, tested in gesture_control_test.py WOKRING
 imx500 = IMX500(POSE_MODEL) 
