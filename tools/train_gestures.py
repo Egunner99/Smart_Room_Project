@@ -33,7 +33,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 # the straify=y ensures that the class distribution is preserved
 # 80 train, 20 test, random state for reproducibility
 
-clf = RandomForestClassifier(n_estimators=200, random_state=42)
+clf = RandomForestClassifier(n_estimators=200, class_weight="balanced", random_state=42)
 clf.fit(X_train, y_train)
 
 cv = cross_val_score(clf, X, y, cv=5) # 5 fold cross validation
@@ -50,7 +50,7 @@ print(cm)
 
 joblib.dump(clf, "models/gesture_model_split.joblib")
 
-final = RandomForestClassifier(n_estimators=200, random_state=42)
+final = RandomForestClassifier(n_estimators=200, class_weight="balanced", random_state=42)
 final.fit(X, y) # train on all data
 joblib.dump(final, "models/gesture_model.joblib")
 

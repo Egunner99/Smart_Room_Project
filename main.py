@@ -14,7 +14,9 @@ from picamera2.devices.imx500.postprocess_highernet import postprocess_higherhrn
 from smart_room.recognizer import load_known_faces, identify_in_frame
 from smart_room.action import handle_person
 from smart_room.gestures import classify_gesture, handle_gesture
-from smart_room.config import KNOWN_FACES_DIR, COOLDOWN_SECONDS, CAPTURES_DIR, POSE_MODEL, POSE_THRESHOLD, FACE_INTERVAL, GESTURE_COOLDOWN
+from smart_room.config import (KNOWN_FACES_DIR, COOLDOWN_SECONDS, CAPTURES_DIR, 
+                            POSE_MODEL, POSE_THRESHOLD, FACE_INTERVAL, GESTURE_COOLDOWN, 
+                            MODELS_DIR)
 
 IMG_SIZE = (480, 640)
 

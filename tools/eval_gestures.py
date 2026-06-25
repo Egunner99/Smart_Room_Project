@@ -17,7 +17,7 @@ X_train, y_train = load("data/gesture_data.csv")
 X_test, y_test = load("data/gesture_test.csv")
 print (f"loaded {len(X_train)} training samples with {X_train.shape[1]} features each")
 
-clf = RandomForestClassifier(n_estimators=200, random_state=42)
+clf = RandomForestClassifier(n_estimators=200, class_weight="balanced", random_state=42)
 clf.fit(X_train, y_train)
 
 labels = sorted(set(y_test))

@@ -1,64 +1,126 @@
 # Smart Room
 
 A Raspberry Pi project that watches a room, recognizes who walks in, and reacts:
-it starts that person's Spotify playlist and sends me a Telegram message. If it
-sees someone it doesn't know, it sends a photo instead. Once a known person is in
-frame they can also control playback with hand gestures.
+it starts that person's Spotify playlist and sends me a Telegram message (a photo
+if it doesn't recognize the face). Once a known person is in frame, they can also
+control playback with hand gestures - recognized by a classifier I trained on top
+of the camera's on-sensor pose estimation.
 
 The point of the project was to actually use the Raspberry Pi AI Camera (IMX500)
-for on-sensor inference, not just treat it as a webcam.
+for on-device inference instead of treating it as a webcam, and to do some real ML
+on top of it rather than just calling a pretrained library.
+
+README ASSISTED BY CLAUDE FOR IMPROVED READABILITY
 
 ## What it does
 
-- Detects and recognizes faces, and greets known people by name
+- Recognizes faces and greets known people by name
 - Plays a per-person Spotify playlist on a chosen device
 - Telegram alerts on entry (with a photo when the face is unknown)
-- Hand gesture control once a known person is present:
-  - right hand up: next track
-  - left hand up: play / pause
-- Handles more than one person in frame (greets everyone, plays music for the first)
+- Hand-gesture control for recognized people, via a trained model:
+  - left hand up -> next track
+  - right hand up -> play / pause
+  - both hands up -> that person's favorite song
+  - t-pose -> that person's love song
+- Handles more than one person in frame (greets everyone, music for the first)
 
 ## Hardware
 
 - Raspberry Pi 5 (8GB)
-- Raspberry Pi AI Camera (IMX500 sensor, has its own neural processing chip)
-- A Spotify Connect target (mine is an Apple TV, set by device type in config)
+- Raspberry Pi AI Camera (Sony IMX500 sensor, neural processing on the sensor itself)
+- A Spotify Connect target 
 
 ## How it works
 
-There are two things running off the one camera:
+Two things run off the one camera at the same time:
 
-- **Face recognition** runs on the Pi's CPU using the `face_recognition` (dlib)
-  library. Encodings for the training photos are computed once and cached to disk
-  (`encodings.npz`), so startup is fast after the first run.
-- **Pose estimation** runs on the camera's NPU using a pretrained HigherHRNet
-  model. The Pi never runs that model - the sensor does it and hands back the
-  keypoints in the frame metadata. The gesture logic on top of those keypoints
-  (which wrist is above which shoulder, with confidence checks and a bit of
-  debouncing) is the custom part.
+- **Face recognition** on the Pi's CPU (`face_recognition` / dlib). The encodings
+  for the training photos are computed once and cached to disk, so startup is fast
+  after the first run.
+- **Pose estimation** on the camera's NPU using a pretrained HigherHRNet model. The
+  Pi never runs that model - the sensor runs it and returns the body keypoints in
+  the frame metadata.
 
 The main loop grabs one frame, reads the pose keypoints from its metadata every
-cycle, and runs the slower face recognition about once a second. Gestures only
-do anything while a known person is recognized.
+cycle, and runs the slower face recognition about once a second. Gestures only do
+anything while a known person is recognized.
+
+## The gesture model (the ML part)
+
+The pose model is pretrained - it just gives 17 body keypoints. The actual work is
+everything built on top of those points.
+
+### Features
+Each pose becomes 14 numbers: the (x, y) of 7 upper-body joints (nose, shoulders,
+elbows, wrists). Before they're used, every pose is **normalized** - recentered on
+the midpoint between the shoulders and scaled by shoulder width - so the same
+gesture produces the same numbers no matter where you stand or how far from the
+camera you are. Without that, the model would just memorize pixel positions and
+break the moment you moved.
+
+### Model
+A scikit-learn RandomForest (200 trees). For ~1700 keypoint vectors it's the right
+fit: fast to train, runs instantly on CPU, needs no feature scaling, and is robust
+on small tabular data. Five classes: neutral, left_hand, right_hand, both_hands,
+t_pose.
+
+### How it was validated (and why I don't report 100%)
+Same-session cross-validation hit ~99%, but that's optimistic - held-out frames
+from the same recording look almost identical to the training frames. The honest
+test is **cross-session**: train on one recording, test on a separate one collected
+in different conditions (position, distance, clothing). That gave **93%**, which is
+the number I trust.
+
+I also iterated, and the iteration is the interesting part:
+
+| version | data | cross-session | issue |
+|---|---|---|---|
+| v1 | 1500 balanced | 93% | right_hand over-predicted (precision 0.75) |
+| v2 | +200 neutral | 89% | over-corrected - neutral started eating left_hand / t_pose |
+| v3 | v2 + class_weight | 88% | barely changed -> the problem is feature overlap, not count imbalance |
+
+The takeaway: poses like "hand near face" genuinely overlap with real gestures in
+feature space, so labeling them neutral just creates contradictory training
+examples that no model can separate. Ambiguity is better handled at **runtime** (a
+confidence gate that ignores unsure predictions) than forced into the labels.
+
+### What the model actually learned
+Feature importance shows the **wrist and elbow coordinates dominate**, while the
+shoulders are near zero - which makes sense, because the shoulders are the
+normalization anchor (roughly fixed after centering), so the gesture information
+lives in the hands. Reading one tree confirms it learned real body logic: "is the
+left elbow up? -> is the right elbow also up? -> both_hands vs left_hand," and so
+on. Visuals are in `docs/` (feature importances, confusion matrix, an example tree).
+
+### Runtime safety
+Live, a gesture only fires if the model is confident enough
+(`GESTURE_CONFIDENCE_THRESHOLD`) and isn't within a short cooldown of the last
+command - so an ambiguous pose does nothing instead of misfiring.
 
 ## Project layout
 
 ```
 smart_room_project/
-├── main.py                 entry point, the camera loop
+├── main.py                 entry point: camera loop, ties everything together
 ├── requirements.txt
 ├── people.py.example       copy to people.py and fill in your own data
 ├── smart_room/
 │   ├── recognizer.py       load/cache faces, identify who's in frame
-│   ├── gestures.py         turn pose keypoints into music commands
+│   ├── gestures.py         normalize keypoints -> features, classify, map to actions
 │   ├── action.py           what happens on a detection (spotify + telegram)
 │   ├── spotify_control.py  playback control
 │   ├── telegram_notify.py  text + photo alerts
-│   └── config.py           constants, pulls playlists from people.py
+│   └── config.py           paths + tuning constants (pulls personal data from people.py)
 ├── tools/
-│   └── capture_faces.py    grab training photos
-├── tests/                  scratch scripts from building it
-├── known_faces/            training photos (gitignored)
+│   ├── capture_faces.py    grab face training photos
+│   ├── collect_gestures.py record labeled pose samples
+│   ├── train_gestures.py   train + save the gesture model
+│   ├── eval_gestures.py    cross-session evaluation
+│   └── visualize_model.py  generate the model visuals
+├── models/                 trained gesture model (encodings cache is gitignored)
+├── data/                   pose datasets (gitignored)
+├── docs/                   model visuals
+├── known_faces/            face training photos (gitignored)
 └── captures/               snapshots of unknown faces (gitignored)
 ```
 
@@ -89,14 +151,14 @@ TELEGRAM_BOT_TOKEN=...
 TELEGRAM_CHAT_ID=...
 ```
 
-Your people and their playlists go in `people.py`:
+Your people, playlists, and per-person gesture songs go in `people.py` (copy the
+template and fill it in):
 
 ```
 cp people.py.example people.py
-# then edit people.py with names and Spotify URIs
 ```
 
-Capture some training photos for each person (run from the project root):
+Capture face training photos for each person (run from the project root):
 
 ```
 python3 tools/capture_faces.py
@@ -109,15 +171,49 @@ source venv/bin/activate
 python3 main.py
 ```
 
-First run uploads the pose model to the camera (takes a bit) and builds the face
-cache. Ctrl+C to stop.
+First run uploads the pose model to the camera and builds the face cache. Ctrl+C
+to stop. Recognized person -> their playlist + a Telegram message; then their
+gestures control playback.
 
-## Notes and things left to do
+## Retraining the gesture model
 
-- Side profiles are weak. dlib's face model is built for front-facing faces, so
-  turning your head sideways usually reads as unknown.
-- Only the first recognized person's music plays, since one device can only play
-  one thing. Everyone known still gets a greeting.
+The repo ships with a trained `models/gesture_model.joblib`, but to train your own:
+
+```
+# 1. collect labeled samples (hold each pose, vary position/distance)
+python3 -m tools.collect_gestures            # -> data/gesture_data.csv
+
+# 2. collect a separate session for honest evaluation
+python3 -m tools.collect_gestures gesture_test.csv
+
+# 3. train (prints accuracy, saves the model)
+python3 tools/train_gestures.py
+
+# 4. cross-session evaluation
+python3 tools/eval_gestures.py
+
+# 5. (optional) regenerate the visuals
+python3 tools/visualize_model.py
+```
+
+## Notes and known limitations
+
+- `right_hand` is slightly over-predicted - kept on purpose as a documented
+  precision/recall tradeoff (see the table above).
+- Raising both hands can briefly fire a single-hand gesture first, since one hand
+  crosses the threshold before the other.
+- Pose keypoints need short sleeves / fitted clothing - long, loose sleeves drop
+  the shoulder keypoint confidence and the pose can't be read.
+- Volume gestures were dropped: many devices (Apple TV, Bluetooth speakers) return
+  `VOLUME_CONTROL_DISALLOW` and won't accept remote volume over Spotify.
+- Side-profile faces recognize poorly (a limitation of the dlib face model).
+- Only the first recognized person's music plays, since one device plays one thing.
 - No auto-start on boot yet (planned: a systemd service).
-- Gestures need the hand fully lowered between repeats, since the detection
-  resets on the "hand down" state.
+
+## Notes on the dependencies
+
+`numpy` is pinned to 1.24.2 on purpose - the system camera stack (`picamera2`,
+`simplejpeg`) is built against it, and a newer numpy breaks it. `scikit-learn` is
+pinned to a 1.x release for the same reason (newer ones pull numpy 2). OpenCV is
+the headless build to avoid a Qt plugin conflict.
+```
