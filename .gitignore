@@ -5,7 +5,6 @@ __pycache__/
 *.pyc
 *.jpg
 *.jpeg
-*.png
 .env
 .cache
 people.py
