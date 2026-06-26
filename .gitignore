@@ -12,3 +12,4 @@ misc/
 misc/
 models/encodings.npz
 data/
+room.log

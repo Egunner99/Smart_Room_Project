@@ -13,7 +13,7 @@ ENCODINGS_CACHE = "models/encodings.npz"   # cached face encodings (gitignored)
 
 #----timing----
 COOLDOWN_SECONDS = 15 # cooldown trigger for the same person counts
-FACE_INTERVAL = 1.0           # seconds between face-recognition passes
+FACE_INTERVAL = 3.0           # seconds between face-recognition passes
 GESTURE_COOLDOWN = 3.0 # be able to move positions
 
 # ---playback---
