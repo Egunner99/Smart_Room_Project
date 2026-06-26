@@ -1,0 +1,22 @@
+sudo tee /etc/systemd/system/smart-room.service > /dev/null <<'EOF'
+[Unit]
+Description=Smart Room Telegram controller
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=<your-user>
+WorkingDirectory=/home/<your-user>/smart_room_project
+ExecStart=/home/<your-user>/smart_room_project/venv/bin/python3 telegram_control.py
+KillSignal=SIGINT
+TimeoutStopSec=20
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now smart-room.service

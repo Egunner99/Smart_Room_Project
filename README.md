@@ -102,8 +102,11 @@ command - so an ambiguous pose does nothing instead of misfiring.
 ```
 smart_room_project/
 ├── main.py                 entry point: camera loop, ties everything together
+├── telegram_control.py     telegram start (runs as a service)
 ├── requirements.txt
 ├── people.py.example       copy to people.py and fill in your own data
+├── deply/                  systemmd unit file
+│   ├──
 ├── smart_room/
 │   ├── recognizer.py       load/cache faces, identify who's in frame
 │   ├── gestures.py         normalize keypoints -> features, classify, map to actions
@@ -175,6 +178,33 @@ First run uploads the pose model to the camera and builds the face cache. Ctrl+C
 to stop. Recognized person -> their playlist + a Telegram message; then their
 gestures control playback.
 
+## Running on boot (phone control)
+
+Rather than auto-running the room on boot, a small controller (`telegram_control.py`)
+runs as a systemd service and lets me start/stop the room from my phone over
+Telegram - so the camera only runs when I ask for it.
+
+Commands (sent to the bot from my own chat):
+
+- `/start` - launch the room
+- `/stop` - shut it down (releases the camera cleanly)
+- `/status` - is it running?
+
+The controller is owner-only - it ignores any chat that isn't my `TELEGRAM_CHAT_ID`,
+so a random person who finds the bot can't turn the camera on. It launches `main.py`
+as a subprocess (logging to `room.log`) and stops it with SIGINT so the camera tears
+down properly.
+
+room.log has been gitignored due to sensitive information
+
+Set it up as a service so it starts on boot (adjust the user/paths for your setup):
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now smart-room.service
+
+Logs: `journalctl -u smart-room.service -f` for the controller, `tail -f room.log`
+for the room itself. (A copy of the unit file is in `deploy/` for reference.)
+
 ## Retraining the gesture model
 
 The repo ships with a trained `models/gesture_model.joblib`, but to train your own:
@@ -208,7 +238,6 @@ python3 tools/visualize_model.py
   `VOLUME_CONTROL_DISALLOW` and won't accept remote volume over Spotify.
 - Side-profile faces recognize poorly (a limitation of the dlib face model).
 - Only the first recognized person's music plays, since one device plays one thing.
-- No auto-start on boot yet (planned: a systemd service).
 
 ## Notes on the dependencies
 

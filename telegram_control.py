@@ -61,7 +61,7 @@ offset = inital[-1]["update_id"] + 1 if inital else None
 try:
     while True:
         try:
-
+            # adding timeout delay to deal with the bot not responding to commands
             response = requests.get(f"{API_URL}/getUpdates", 
                                 params={"offset": offset, "timeout": 30}, timeout= 25).json()
 
