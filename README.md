@@ -20,8 +20,8 @@ README ASSISTED BY CLAUDE FOR IMPROVED READABILITY
 - Hand-gesture control for recognized people, via a trained model:
   - left hand up -> next track
   - right hand up -> play / pause
-  - both hands up -> that person's favorite song
-  - t-pose -> that person's love song
+  - both hands up -> that person's track song
+  - t-pose -> that person's track song
 - Handles more than one person in frame (greets everyone, music for the first)
 
 ## Hardware
@@ -154,7 +154,7 @@ TELEGRAM_BOT_TOKEN=...
 TELEGRAM_CHAT_ID=...
 ```
 
-Your people, playlists, and per-person gesture songs go in `people.py` (copy the
+Your people, playlists, and per-person gesture playlists go in `people.py` (copy the
 template and fill it in):
 
 ```
@@ -238,7 +238,9 @@ python3 tools/visualize_model.py
   `VOLUME_CONTROL_DISALLOW` and won't accept remote volume over Spotify.
 - Side-profile faces recognize poorly (a limitation of the dlib face model).
 - Only the first recognized person's music plays, since one device plays one thing.
-
+- Face recognition needs a well-lit, roughly front-on face. Backlighting; `main.py`
+  exposure compensation to help, but heavy backlight still needs repositioning.
+  
 ## Notes on the dependencies
 
 `numpy` is pinned to 1.24.2 on purpose - the system camera stack (`picamera2`,
