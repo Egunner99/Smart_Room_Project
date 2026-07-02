@@ -8,11 +8,11 @@ PLAYLISTS = {
 }
 
 
-FAVORITE_TRACKS = {
+FAVORITE_PLAYLISTS = {
     "your_name_here": "your_spotify_track_uri_here"
 }
 
-LOVE_TRACKS = {
+LOVE_PLAYLISTS = {
     "your_name_here": "your_spotify_track_uri_here"
 }
 

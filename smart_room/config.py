@@ -2,7 +2,7 @@
 # orginally had personal playlist and names, made genric for public use
 
 import os 
-from people import PLAYLISTS, UNKNOWN_TRACK, FAVORITE_TRACKS, LOVE_TRACKS
+from people import PLAYLISTS, UNKNOWN_TRACK, FAVORITE_PLAYLISTS, LOVE_PLAYLISTS
 
 #----paths----
 KNOWN_FACES_DIR = "known_faces"

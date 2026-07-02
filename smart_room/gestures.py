@@ -1,8 +1,8 @@
 #working
 import numpy as np
 import joblib
-from .spotify_control import next_track, toggle_play_pause, play_track
-from .config import PLAYBACK_DEVICE, GESTURE_MIN_CONFIDENCE, GESTURE_RAISE_MARGIN, GESTURE_MODEL, GESTURE_CONFIDENCE_THRESHOLD, FAVORITE_TRACKS, LOVE_TRACKS
+from .spotify_control import next_track, toggle_play_pause, play_track, play_for_person
+from .config import PLAYBACK_DEVICE, GESTURE_MIN_CONFIDENCE, GESTURE_RAISE_MARGIN, GESTURE_MODEL, GESTURE_CONFIDENCE_THRESHOLD, FAVORITE_PLAYLISTS, LOVE_PLAYLISTS
 
 L_SHOULDER, R_SHOULDER, L_WRIST, R_WRIST = 5, 6, 9, 10
 
@@ -39,13 +39,13 @@ def handle_gesture(gesture, person):
     elif gesture == "left_hand":
         next_track(PLAYBACK_DEVICE)
     elif gesture == "both_hands":
-        track = FAVORITE_TRACKS.get(person)
-        if track:
-            play_track(track, PLAYBACK_DEVICE)
+        uri = FAVORITE_PLAYLISTS.get(person)
+        if uri:
+            play_for_person(person, uri, PLAYBACK_DEVICE)
     elif gesture == "t_pose":
-        track = LOVE_TRACKS.get(person)
-        if track:
-            play_track(track, PLAYBACK_DEVICE)
+        uri = LOVE_PLAYLISTS.get(person)
+        if uri:
+            play_for_person(person, uri, PLAYBACK_DEVICE)
 
 
 

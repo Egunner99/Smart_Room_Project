@@ -5,7 +5,7 @@ import time
 import cv2
 import numpy as np
 
-
+from libcamera import controls
 from picamera2 import Picamera2
 from picamera2.devices.imx500 import IMX500, NetworkIntrinsics
 from picamera2.devices.imx500.postprocess_highernet import postprocess_higherhrnet
@@ -45,6 +45,10 @@ config = picam2.create_preview_configuration(
     controls={"FrameRate": intrinsics.inference_rate}, buffer_count=12
 )
 picam2.start(config)
+picam2.set_controls({
+    "AeMeteringMode": controls.AeMeteringModeEnum.CentreWeighted,
+    "ExposureValue": 2.0,   
+    })
 imx500.set_auto_aspect_ratio()
 time.sleep(2)  # allow camera to warm up
 

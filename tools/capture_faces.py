@@ -1,4 +1,5 @@
 from picamera2 import Picamera2
+from libcamera import controls
 import cv2
 import time
 import os
@@ -8,6 +9,10 @@ import os
 
 picam2 = Picamera2()
 picam2.configure(picam2.create_preview_configuration())
+picam2.set_controls({
+    "AeMeteringMode": controls.AeMeteringModeEnum.CentreWeighted,
+    "ExposureValue": 2.0,   
+    })
 picam2.start()
 time.sleep(1)
 
@@ -24,7 +29,7 @@ time.sleep(5)
 for i in range(total):
     frame = picam2.capture_array()
     frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-    filename = f"{save_dir}/{name}_{i}.jpg"
+    filename = f"{save_dir}/{name}_{int(time.time()) * 1000}.jpg"
     cv2.imwrite(filename, frame_bgr)
     print(f"saved {filename} ({i+1}/{total})")
 
